@@ -1,10 +1,52 @@
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Anchor, MapPin, Clock, Shield } from "lucide-react";
+import { Anchor, MapPin, Clock, Shield, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import martekLogoUrl from "@assets/generated_images/Martek_marina_logo_brand_3fbeaeb1.png";
 import marinaHeroUrl from "@assets/generated_images/Marina_harbor_hero_background_a1b4edec.png";
 
 export default function Landing() {
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [location, setLocation] = useLocation();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get("error");
+    if (error) {
+      let message = "Authentication failed. Please try again.";
+      if (error === "auth_failed") {
+        message = "Login was cancelled or failed. Please try again.";
+      } else if (error === "callback_failed") {
+        message = "Authentication callback failed. Please try logging in again.";
+      }
+      toast({
+        title: "Login Error",
+        description: message,
+        variant: "destructive",
+      });
+      // Clean up URL
+      setLocation("/");
+    }
+  }, [toast, setLocation]);
+
+  const handleLogin = async () => {
+    setIsLoggingIn(true);
+    try {
+      // Use window.location for OAuth redirect
+      window.location.href = "/api/login";
+    } catch (error) {
+      setIsLoggingIn(false);
+      toast({
+        title: "Login Error",
+        description: "Unable to initiate login. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -33,10 +75,18 @@ export default function Landing() {
           <Button
             size="lg"
             className="h-12 sm:h-14 px-6 sm:px-8 text-base sm:text-lg font-semibold rounded-xl w-full max-w-xs sm:w-auto"
-            onClick={() => window.location.href = "/api/login"}
+            onClick={handleLogin}
+            disabled={isLoggingIn}
             data-testid="button-login"
           >
-            Log In to Book
+            {isLoggingIn ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Redirecting...
+              </>
+            ) : (
+              "Log In to Book"
+            )}
           </Button>
         </div>
       </div>
@@ -115,10 +165,18 @@ export default function Landing() {
           <Button
             size="lg"
             className="h-12 sm:h-14 px-6 sm:px-8 text-base sm:text-lg font-semibold rounded-xl w-full max-w-xs sm:w-auto"
-            onClick={() => window.location.href = "/api/login"}
+            onClick={handleLogin}
+            disabled={isLoggingIn}
             data-testid="button-login-cta"
           >
-            Get Started
+            {isLoggingIn ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Redirecting...
+              </>
+            ) : (
+              "Get Started"
+            )}
           </Button>
         </div>
       </div>
