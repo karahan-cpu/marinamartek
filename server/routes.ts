@@ -2,17 +2,32 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertPedestalSchema, insertBookingSchema, insertServiceRequestSchema } from "@shared/schema";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated, getSupabaseUser } from "./supabaseAuth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup Replit Auth
+  // Setup Supabase Auth
   await setupAuth(app);
 
   // Auth route - get logged in user
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const supabaseUser = req.user;
+      const userId = supabaseUser.id;
       const user = await storage.getUser(userId);
+      
+      if (!user) {
+        // Create user if doesn't exist in database
+        await storage.upsertUser({
+          id: supabaseUser.id,
+          email: supabaseUser.email || undefined,
+          firstName: supabaseUser.user_metadata?.first_name,
+          lastName: supabaseUser.user_metadata?.last_name,
+          profileImageUrl: supabaseUser.user_metadata?.avatar_url,
+        });
+        const newUser = await storage.getUser(userId);
+        return res.json(newUser);
+      }
+      
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
