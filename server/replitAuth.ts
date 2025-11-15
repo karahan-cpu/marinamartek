@@ -89,12 +89,16 @@ export async function setupAuth(app: Express) {
   const ensureStrategy = (domain: string) => {
     const strategyName = `replitauth:${domain}`;
     if (!registeredStrategies.has(strategyName)) {
+      // Get protocol for callback URL (use https for Vercel, http for localhost)
+      const protocol = domain.includes('localhost') || domain.includes('127.0.0.1') ? 'http' : 'https';
+      const callbackURL = `${protocol}://${domain}/api/callback`;
+      
       const strategy = new Strategy(
         {
           name: strategyName,
           config,
           scope: "openid email profile offline_access",
-          callbackURL: `https://${domain}/api/callback`,
+          callbackURL,
         },
         verify,
       );
@@ -109,29 +113,32 @@ export async function setupAuth(app: Express) {
   app.get("/api/login", (req, res, next) => {
     try {
       if (!process.env.REPL_ID) {
-        return res.status(500).json({ 
-          error: "Authentication not configured",
-          message: "REPL_ID environment variable is not set. Please configure authentication." 
-        });
+        // Redirect to home with error instead of showing JSON
+        return res.redirect("/?error=auth_not_configured");
       }
-      ensureStrategy(req.hostname);
-      passport.authenticate(`replitauth:${req.hostname}`, {
+      
+      // Get the full hostname - Vercel provides this in the 'host' header
+      const hostname = req.get('host') || req.hostname || 'localhost';
+      
+      ensureStrategy(hostname);
+      passport.authenticate(`replitauth:${hostname}`, {
         prompt: "login consent",
         scope: ["openid", "email", "profile", "offline_access"],
       })(req, res, next);
     } catch (error) {
       console.error("Login error:", error);
-      res.status(500).json({ 
-        error: "Login failed",
-        message: "Unable to initiate login. Please try again later." 
-      });
+      // Redirect to home with error instead of showing JSON
+      res.redirect("/?error=login_failed");
     }
   });
 
   app.get("/api/callback", (req, res, next) => {
     try {
-      ensureStrategy(req.hostname);
-      passport.authenticate(`replitauth:${req.hostname}`, {
+      // Get the full hostname - Vercel provides this in the 'host' header
+      const hostname = req.get('host') || req.hostname || 'localhost';
+      
+      ensureStrategy(hostname);
+      passport.authenticate(`replitauth:${hostname}`, {
         successReturnToOrRedirect: "/",
         failureRedirect: "/?error=auth_failed",
       })(req, res, next);

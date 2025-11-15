@@ -21,6 +21,10 @@ export default function Landing() {
         message = "Login was cancelled or failed. Please try again.";
       } else if (error === "callback_failed") {
         message = "Authentication callback failed. Please try logging in again.";
+      } else if (error === "auth_not_configured") {
+        message = "Authentication is not configured. Please contact support.";
+      } else if (error === "login_failed") {
+        message = "Unable to initiate login. Please try again later.";
       }
       toast({
         title: "Login Error",
