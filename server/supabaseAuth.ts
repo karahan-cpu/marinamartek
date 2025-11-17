@@ -78,31 +78,38 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
 
 // Setup auth routes
 export async function setupAuth(app: Express) {
-  // Login route - redirects to Supabase OAuth
+  // Login route - redirects to Supabase OAuth or shows login options
   app.get("/api/login", async (req, res) => {
     try {
       const provider = (req.query.provider as string) || 'google'; // Default to Google
       const hostname = req.get('host') || req.hostname || 'localhost';
       const protocol = req.get('x-forwarded-proto') || req.protocol || 'https';
-      const redirectTo = `${protocol}://${hostname}/api/callback`;
+      
+      // For OAuth providers
+      if (provider && provider !== 'email') {
+        const redirectTo = `${protocol}://${hostname}/api/callback`;
 
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: provider as any,
-        options: {
-          redirectTo,
-        },
-      });
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: provider as any,
+          options: {
+            redirectTo,
+          },
+        });
 
-      if (error) {
-        console.error("Login error:", error);
+        if (error) {
+          console.error("Login error:", error);
+          return res.redirect("/?error=login_failed");
+        }
+
+        if (data.url) {
+          return res.redirect(data.url);
+        }
+
         return res.redirect("/?error=login_failed");
       }
-
-      if (data.url) {
-        return res.redirect(data.url);
-      }
-
-      res.redirect("/?error=login_failed");
+      
+      // If no provider specified or email, redirect to home (frontend will handle email/password)
+      res.redirect("/");
     } catch (error) {
       console.error("Login error:", error);
       res.redirect("/?error=login_failed");
@@ -112,12 +119,20 @@ export async function setupAuth(app: Express) {
   // Callback route - handles OAuth callback
   app.get("/api/callback", async (req, res) => {
     try {
-      const { code } = req.query;
+      const { code, error: oauthError } = req.query;
 
-      if (!code || typeof code !== 'string') {
+      if (oauthError) {
+        console.error("OAuth error:", oauthError);
         return res.redirect("/?error=auth_failed");
       }
 
+      if (!code || typeof code !== 'string') {
+        // Check if this is a direct OAuth redirect (Supabase handles it client-side)
+        // In that case, just redirect to home and let frontend handle it
+        return res.redirect("/");
+      }
+
+      // Exchange code for session
       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
       if (error || !data.session) {
@@ -137,8 +152,8 @@ export async function setupAuth(app: Express) {
         });
       }
 
-      // Redirect to home - Supabase will handle session via cookies/localStorage
-      // The frontend will automatically detect the session
+      // Redirect to home with hash fragment for frontend to process
+      // Supabase OAuth returns tokens in URL hash, so we redirect to let frontend handle it
       res.redirect("/");
     } catch (error) {
       console.error("Callback error:", error);

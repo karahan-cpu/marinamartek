@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Anchor, MapPin, Clock, Shield, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 import martekLogoUrl from "@assets/generated_images/Martek_marina_logo_brand_3fbeaeb1.png";
 import marinaHeroUrl from "@assets/generated_images/Marina_harbor_hero_background_a1b4edec.png";
 
@@ -39,9 +40,40 @@ export default function Landing() {
   const handleLogin = async () => {
     setIsLoggingIn(true);
     try {
-      // Use window.location for OAuth redirect
-      window.location.href = "/api/login";
-    } catch (error) {
+      // Use Supabase OAuth (client-side)
+      const hostname = window.location.hostname;
+      const protocol = window.location.protocol;
+      const redirectTo = `${protocol}//${hostname}/api/callback`;
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+        },
+      });
+
+      if (error) {
+        console.error("OAuth error:", error);
+        setIsLoggingIn(false);
+        toast({
+          title: "Login Error",
+          description: error.message || "Unable to initiate login. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data.url) {
+        // Redirect to OAuth provider
+        window.location.href = data.url;
+        return;
+      }
+
+      // Fallback to server-side login if no URL
+      setIsLoggingIn(false);
+      window.location.href = "/api/login?provider=google";
+    } catch (error: any) {
+      console.error("Login error:", error);
       setIsLoggingIn(false);
       toast({
         title: "Login Error",
