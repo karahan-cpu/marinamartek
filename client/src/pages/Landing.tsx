@@ -41,17 +41,15 @@ export default function Landing() {
   const handleLogin = async () => {
     setIsLoggingIn(true);
     try {
-      // Get the current origin for redirect
-      const redirectTo = `${window.location.origin}/`;
+      // Always redirect to frontend root - Supabase will add hash fragments
+      const redirectTo = window.location.origin + '/';
+
+      console.log('Initiating OAuth login with redirectTo:', redirectTo);
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
+          redirectTo: redirectTo,
         },
       });
 
@@ -67,7 +65,8 @@ export default function Landing() {
       }
 
       // If we got a URL, redirect to it
-      if (data.url) {
+      if (data?.url) {
+        console.log('Redirecting to OAuth provider:', data.url);
         window.location.href = data.url;
         // Don't set isLoggingIn to false - we're redirecting
         return;
@@ -77,7 +76,7 @@ export default function Landing() {
       setIsLoggingIn(false);
       toast({
         title: "Login Error",
-        description: "Unable to initiate login. Please try again.",
+        description: "Unable to initiate login. Please check your Supabase configuration.",
         variant: "destructive",
       });
     } catch (error: any) {
