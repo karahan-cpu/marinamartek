@@ -1,11 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || import.meta.env.PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
+// Get Supabase URL and key from environment variables
+// Vite uses VITE_ prefix for client-side env vars
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!import.meta.env.VITE_SUPABASE_URL && !import.meta.env.PUBLIC_SUPABASE_URL) {
-  console.warn('⚠️ Supabase URL and Anon Key must be set in environment variables (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)');
-  console.warn('⚠️ Authentication will not work until Supabase is configured');
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error(
+    'Missing Supabase environment variables!\n\n' +
+    'Please set the following in your .env.local file:\n' +
+    'VITE_SUPABASE_URL=https://your-project.supabase.co\n' +
+    'VITE_SUPABASE_ANON_KEY=your-anon-key\n\n' +
+    'And in Vercel Dashboard > Settings > Environment Variables'
+  );
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -13,6 +20,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    flowType: 'pkce',
   },
 });
-

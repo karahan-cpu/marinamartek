@@ -14,6 +14,7 @@ export default function Landing() {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Check for error in URL params
     const params = new URLSearchParams(window.location.search);
     const error = params.get("error");
     if (error) {
@@ -40,14 +41,17 @@ export default function Landing() {
   const handleLogin = async () => {
     setIsLoggingIn(true);
     try {
-      // Use Supabase OAuth (client-side)
-      // Redirect to current origin - Supabase will add hash fragments with tokens
-      const redirectTo = `${window.location.origin}${window.location.pathname}`;
+      // Get the current origin for redirect
+      const redirectTo = `${window.location.origin}/`;
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         },
       });
 
@@ -62,21 +66,26 @@ export default function Landing() {
         return;
       }
 
+      // If we got a URL, redirect to it
       if (data.url) {
-        // Redirect to OAuth provider
         window.location.href = data.url;
+        // Don't set isLoggingIn to false - we're redirecting
         return;
       }
 
-      // Fallback to server-side login if no URL
+      // If no URL, something went wrong
       setIsLoggingIn(false);
-      window.location.href = "/api/login?provider=google";
+      toast({
+        title: "Login Error",
+        description: "Unable to initiate login. Please try again.",
+        variant: "destructive",
+      });
     } catch (error: any) {
       console.error("Login error:", error);
       setIsLoggingIn(false);
       toast({
         title: "Login Error",
-        description: "Unable to initiate login. Please try again.",
+        description: error.message || "Unable to initiate login. Please try again.",
         variant: "destructive",
       });
     }
