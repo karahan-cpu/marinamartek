@@ -1,25 +1,16 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { User, Anchor, Edit } from "lucide-react";
-import type { User as UserType, Booking, Pedestal } from "@shared/schema";
+import type { Booking, Pedestal } from "@shared/schema";
 import { format } from "date-fns";
+import { useAuth } from "@/hooks/useAuth";
 import adBanner from "@assets/generated_images/Marina_equipment_ad_banner_d7c1fc9b.png";
 
 export default function Profile() {
-  const [user] = useState<UserType>({
-    id: "demo-user-id",
-    username: "marina_user",
-    password: "",
-    fullName: "Captain Smith",
-    boatName: "Sea Breeze",
-    boatType: "Sailing Yacht",
-    boatLength: "42 ft",
-    boatRegistration: "MB-2024-001",
-  });
+  const { user } = useAuth();
 
   const { data: bookings } = useQuery<Booking[]>({
     queryKey: ["/api/bookings"],
@@ -40,15 +31,15 @@ export default function Profile() {
               <div className="flex items-center gap-4">
                 <Avatar className="w-24 h-24" data-testid="avatar-user">
                   <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                    {user.fullName.split(' ').map(n => n[0]).join('')}
+                    {user ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U' : 'U'}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <h1 className="text-2xl font-semibold" data-testid="text-user-name">
-                    {user.fullName}
+                    {user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'User' : 'User'}
                   </h1>
                   <p className="text-muted-foreground" data-testid="text-username">
-                    @{user.username}
+                    {user?.email || 'No email'}
                   </p>
                   <Badge className="mt-2" data-testid="badge-membership">
                     Premium Member
@@ -92,19 +83,19 @@ export default function Profile() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Boat Name</p>
-                <p className="font-medium" data-testid="text-boat-name">{user.boatName}</p>
+                <p className="font-medium" data-testid="text-boat-name">Not set</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Type</p>
-                <p className="font-medium" data-testid="text-boat-type">{user.boatType}</p>
+                <p className="font-medium" data-testid="text-boat-type">Not set</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Length</p>
-                <p className="font-medium" data-testid="text-boat-length">{user.boatLength}</p>
+                <p className="font-medium" data-testid="text-boat-length">Not set</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Registration</p>
-                <p className="font-medium" data-testid="text-boat-registration">{user.boatRegistration}</p>
+                <p className="font-medium" data-testid="text-boat-registration">Not set</p>
               </div>
             </div>
           </CardContent>
