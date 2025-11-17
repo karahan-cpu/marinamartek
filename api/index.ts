@@ -3,6 +3,13 @@ import express, { type Express, type Request, Response, NextFunction } from 'exp
 import { registerRoutes } from '../server/routes';
 import { serveStatic } from '../server/vite';
 
+// Extend Express Request type
+declare module 'express-serve-static-core' {
+  interface Request {
+    rawBody?: unknown;
+  }
+}
+
 let app: Express | null = null;
 
 async function getApp(): Promise<Express> {
@@ -12,15 +19,9 @@ async function getApp(): Promise<Express> {
 
   app = express();
 
-  declare module 'http' {
-    interface IncomingMessage {
-      rawBody: unknown;
-    }
-  }
-
   app.use(express.json({
     verify: (req, _res, buf) => {
-      req.rawBody = buf;
+      (req as any).rawBody = buf;
     }
   }));
   app.use(express.urlencoded({ extended: false }));
