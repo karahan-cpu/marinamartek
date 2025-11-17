@@ -1,5 +1,4 @@
-// Database connection for Replit Auth
-// Reference: Replit Auth blueprint
+// Database connection - supports both Supabase PostgreSQL and Neon
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { neonConfig, Pool } from "@neondatabase/serverless";
 import ws from "ws";
@@ -13,5 +12,15 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// DATABASE_URL can be:
+// 1. Supabase PostgreSQL connection string (postgresql://...)
+// 2. Neon connection string (postgres://...)
+// Both work with @neondatabase/serverless driver
+const connectionString = process.env.DATABASE_URL;
+
+// If using Supabase, the connection string should be from:
+// Supabase Dashboard > Settings > Database > Connection string > URI
+// Format: postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres
+
+const pool = new Pool({ connectionString });
 export const db = drizzle({ client: pool, schema });
