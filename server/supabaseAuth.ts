@@ -87,7 +87,8 @@ export async function setupAuth(app: Express) {
       
       // For OAuth providers
       if (provider && provider !== 'email') {
-        const redirectTo = `${protocol}://${hostname}/api/callback`;
+        // Redirect to frontend root - Supabase OAuth will add hash fragments with tokens
+        const redirectTo = `${protocol}://${hostname}/`;
 
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: provider as any,

@@ -22,5 +22,10 @@ const connectionString = process.env.DATABASE_URL;
 // Supabase Dashboard > Settings > Database > Connection string > URI
 // Format: postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres
 
-const pool = new Pool({ connectionString });
+const pool = new Pool({ 
+  connectionString,
+  max: 1, // Serverless için daha küçük pool
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
+});
 export const db = drizzle({ client: pool, schema });

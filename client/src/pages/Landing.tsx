@@ -41,9 +41,8 @@ export default function Landing() {
     setIsLoggingIn(true);
     try {
       // Use Supabase OAuth (client-side)
-      const hostname = window.location.hostname;
-      const protocol = window.location.protocol;
-      const redirectTo = `${protocol}//${hostname}/api/callback`;
+      // Redirect to current origin - Supabase will add hash fragments with tokens
+      const redirectTo = `${window.location.origin}${window.location.pathname}`;
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',

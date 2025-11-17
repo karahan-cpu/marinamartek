@@ -40,7 +40,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pedestals = await storage.getPedestals();
       res.json(pedestals);
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch pedestals" });
+      console.error("Error fetching pedestals:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to fetch pedestals";
+      res.status(500).json({ 
+        error: "Failed to fetch pedestals",
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      });
     }
   });
 
