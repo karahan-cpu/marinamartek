@@ -6,17 +6,17 @@ import * as schema from "@shared/schema";
 
 neonConfig.webSocketConstructor = ws;
 
-if (!process.env.DATABASE_URL) {
+const connectionString =
+  process.env.DATABASE_URL ||
+  process.env.STORAGE_POSTGRES_PRISMA_URL ||
+  process.env.STORAGE_POSTGRES_URL ||
+  process.env.STORAGE_POSTGRES_URL_NON_POOLING;
+
+if (!connectionString) {
   throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
+    "DATABASE_URL must be set. Please configure DATABASE_URL (or Supabase STORAGE_POSTGRES_URL) in your environment.",
   );
 }
-
-// DATABASE_URL can be:
-// 1. Supabase PostgreSQL connection string (postgresql://...)
-// 2. Neon connection string (postgres://...)
-// Both work with @neondatabase/serverless driver
-const connectionString = process.env.DATABASE_URL;
 
 // If using Supabase, the connection string should be from:
 // Supabase Dashboard > Settings > Database > Connection string > URI
