@@ -1,3 +1,5 @@
+// Catch-all API route handler for Vercel
+// This file handles all /api/* routes
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import express, { type Express, type Request, Response, NextFunction } from 'express';
 import { registerRoutes } from '../server/routes';
