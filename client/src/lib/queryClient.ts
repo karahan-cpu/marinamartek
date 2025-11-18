@@ -63,6 +63,20 @@ export const getQueryFn: <T>(options: {
       return null;
     }
 
+    // Check if response is JSON before parsing
+    const contentType = res.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      const text = await res.text();
+      console.error(`Non-JSON response from ${queryKey.join("/")}:`, text.substring(0, 200));
+      if (res.status === 401) {
+        if (unauthorizedBehavior === "returnNull") {
+          return null;
+        }
+        throw new Error("Unauthorized");
+      }
+      throw new Error(`Invalid response format: ${res.status} ${res.statusText}`);
+    }
+
     await throwIfResNotOk(res);
     return await res.json();
   };
